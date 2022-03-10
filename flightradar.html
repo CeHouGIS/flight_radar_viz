@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>flight radar demo</title>
+
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+    <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+    <script charset="utf-8" src="https://cdnjs.cloudflare.com/ajax/libs/dimple/2.3.0/dimple.latest.min.js"></script>
+    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/css/sidenav.css">
+    <link rel="stylesheet" type="text/css" href="/css/chartshow.css">
+
+    <style>
+        body { margin: 0; padding: 0; }
+        #basemap { position: absolute; top: 0; bottom: 0; width: 100%; };
+        
+        .map-info{
+            background-color: #fff;
+            box-shadow:0 1px 2px rgba(0, 0, 0, 0.20);
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .marker {
+            background-image: 'circle';
+            background-size: cover;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .airport-info {
+            position: absolute;
+            font-family: 'Optima';
+            margin-top: 5px;
+            margin-left: 5px;
+            padding: 5px;
+            width: 30%;
+            border: 2px solid black;
+            font-size: 14px;
+            color: #222;
+            background-color: #fff;
+            border-radius: 1px;
+            transition: 0.5s; 
+        }
+        .mapboxgl-popup {
+            max-width: 400px;
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="comparison-container">
+        <div id="basemap"></div>    
+        <div id="trail_animation"></div>
+    </div>
+
+    <!--side navigation-->
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick=" close_nav()">&times;</a>
+        <a href="#" type="checkbox" name="layers" id="layer_airport_point" value="airport_point">&#9745; airports: point</a>
+        <a href="#" type="checkbox" name="layers" id="layer_airport_heatmap" value="airport_heatmap">&#9744; airports: heatmap</a>
+        <a href="#" type="checkbox" name="layers" id="layer_flight" value="flights">&#9745; flights</a>
+        <!-- <a href="#" type="checkbox" name="layers" id="layer_trail" value="trail">&#9744; flight trails (Visualization)</a> -->
+        <a href="/anime.html" type="checkbox" name="layers" id="layer_trail_anime" value="trail">&#9744; flight trails (animation)</a>
+
+    </div>
+    
+    <div class='airport-info' id="infobox">
+        <h2 style="font-size:30px">BASIC FLIGHT MAP</h2>
+        <span style="font-size:20px;cursor:pointer" onclick=" open_nav()">&#9776; show mode navigation</span>
+        <div id='open_chart' style="font-size:20px;cursor:pointer" onclick="open_chartshow()">&#9744; data statistic</div>
+        <div style="font-size:20px;"><strong>Airport name:</strong> <span id='airport-name'></span></div>
+        <div style="font-size:20px;"><strong>Country:</strong> <span id='airport-country'></span></div>
+        <p class="author">Made by Ce HOU</p>
+        <p class="credit">Data source: flightradar24: <a href="http://www.flightradar24.com/">flightradar24</a>.</p>
+    </div>
+
+    <div id="chartshow">
+        <a href="javascript:void(0)" class="closebtn" onclick=" close_chartshow()">&times;</a>
+        <p  id="charttitle"><strong>Count of flight origin/destination countries</strong></p>
+    </div>
+
+    <!-- load a basemap -->
+    <script>
+        mapboxgl.accessToken = 
+        'pk.eyJ1IjoiaG91Y2UzMTUiLCJhIjoiY2t5aXhqdDViMXp5eDJ1cWgxaTV2emk3aiJ9.FG6QyhcRbpEN46pEJN7iHA';
+        var map = new mapboxgl.Map({
+        container: 'basemap', // container id
+        style: 'mapbox://styles/houce315/cl08chnrs001k15lbvb3c4oq1', //mapbox style ID 
+        center: [-0.1, 51.5], // starting position [lng, lat]
+        zoom: 4 // starting zoom
+        });
+
+        // Add navigation controls
+        const nav = new mapboxgl.NavigationControl();
+        map.addControl(nav, 'top-right');
+        map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+    </script>
+    
+    <!-- show airports and the heatmap -->
+    <script src="/js/airport.js"></script>
+
+    <!-- flight viz -->
+    <script src="/js/flight_viz.js" id="flight_viz_layer" style="visibility: hidden;"></script>
+
+    <!-- data analysis -->
+    <svg width="600" height="600"></svg>
+    <script src="/js/data_analy.js"></script>
+
+
+    <!-- functions about show side area and close them -->
+    <script type="text/javascript">
+        // open side navigation
+        function  open_nav() {
+            document.getElementById("mySidenav").style.width = "250px";
+            document.getElementById("infobox").style.marginLeft = "250px";
+            document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+        }
+
+        // close the side navigation
+        function  close_nav() {
+            document.getElementById("mySidenav").style.width = "0";
+            document.getElementById("infobox").style.marginLeft = "0";
+            document.body.style.backgroundColor = "black";
+        }
+
+        // open chart show
+        function open_chartshow() {
+            document.getElementById("chartshow").style.width = "30%";
+            document.getElementById('open_chart').innerHTML = '&#9745; data statistic';
+            document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+            
+        }
+
+        function close_chartshow() {
+            document.getElementById("chartshow").style.width = "0";
+            document.getElementById('open_chart').innerHTML = '&#9744; data statistic';
+            document.body.style.backgroundColor = "black";
+        }
+    </script>
+
+    <script>
+        // Create a popup, but don't add it to the map yet.
+        const popup = new mapboxgl.Popup({
+        closeButton: true,
+        closeOnClick: false
+        });
+        
+        map.on('mouseenter', 'flights-viz', (event) => {
+        // Change the cursor style as a UI indicator.
+        map.getCanvas().style.cursor = 'pointer';
+        
+        // get average coordinates.
+        const ave_lon = (event.features[0].geometry.coordinates[0][0] + event.features[0].geometry.coordinates[1][0]) / 2;
+        const ave_lat = (event.features[0].geometry.coordinates[0][1] + event.features[0].geometry.coordinates[1][1]) / 2;
+        const coordinates = [ave_lon,ave_lat];
+
+        // console.log(coordinates)
+        const description = '<strong>flight ID:</strong>' + event.features[0].properties.flight_id + '<\p>'
+                            + '<p><strong>origin country: </strong>' + event.features[0].properties.origin + '<\p>' 
+                            + '<p><strong>destination country: </strong>' + event.features[0].properties.destination + '<\p>' 
+                            + '<p><strong>status: </strong>' + event.features[0].properties.status + '<\p>';
+        
+        // Populate the popup and set its coordinates
+        // based on the feature found.
+        popup.setLngLat(coordinates).setHTML(description).addTo(map);
+        // popup.setLngLat(destination_coordinates).setHTML(terminalshow).addTo(map);
+        });
+        
+        map.on('mouseleave', 'places', () => {
+        map.getCanvas().style.cursor = '';
+        popup.remove();
+        });
+    </script>
+
+    <script>
+        // Target the span elements used in the sidebar
+        const NameDisplay = document.getElementById('airport-name');
+        const CountryDisplay = document.getElementById('airport-country');
+
+        let quakeID = null;
+
+        map.on('mousemove', 'airports-viz', (event) => {
+        map.getCanvas().style.cursor = 'pointer';
+        // Set constants equal to the current feature's magnitude, location, and time
+        const airportsName = event.features[0].properties.name;
+        const airportsCountry = event.features[0].properties.country;
+
+        // Check whether features exist
+        if (event.features.length === 0) return;
+        // Display the magnitude, location, and time in the sidebar
+        NameDisplay.textContent = airportsName;
+        CountryDisplay.textContent = airportsCountry;
+
+        // If quakeID for the hovered feature is not null,
+        // use removeFeatureState to reset to the default behavior
+        if (quakeID) {
+            map.removeFeatureState({
+            source: 'airports',
+            id: quakeID
+            });
+        }
+
+        quakeID = event.features[0].id;
+            // When the mouse moves over the viz layer, update the
+            // feature state for the feature under the mouse
+            map.setFeatureState({
+                    source: 'airports',
+                    id: quakeID
+                },
+                {
+                    hover: true
+            });
+        });
+
+        //Event listener for layer switch
+        trigger_point = 1;
+        trigger_heatmap = 0;
+        trigger_flight = 1;
+        document.getElementById("layer_airport_point").addEventListener("click", function(){
+        if (trigger_point == 0){
+            map.setPaintProperty('airports-viz','circle-opacity',0.95);
+
+            document.getElementById("layer_airport_point").innerHTML = '&#9745; airports: point';
+            trigger_point = 1;
+        } else {
+            map.setPaintProperty('airports-viz','circle-opacity',0);
+            document.getElementById("layer_airport_point").innerHTML = '&#9744; airports: point'
+            trigger_point = 0;
+            
+        }        
+        });
+
+        document.getElementById("layer_airport_heatmap").addEventListener("click", function(){
+        if (trigger_heatmap == 0){
+            map.setPaintProperty('airports-heat','heatmap-opacity',0.95);
+            document.getElementById("layer_airport_heatmap").innerHTML = '&#9745; airports: heatmap';
+            trigger_heatmap = 1;
+        } else {
+            map.setPaintProperty('airports-heat','heatmap-opacity',0);
+            document.getElementById("layer_airport_heatmap").innerHTML = '&#9744; airports: heatmap';
+            trigger_heatmap = 0;
+        }    
+        });
+
+
+
+    </script>
+
+</body>
+</html>

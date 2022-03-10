@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://libs.cartocdn.com/carto-vl/v1.4.4/carto-vl.min.js"></script>
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.css" rel="stylesheet" />
+    <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+    <script charset="utf-8" src="https://cdnjs.cloudflare.com/ajax/libs/dimple/2.3.0/dimple.latest.min.js"></script>
+    <link href="css/styles.css" rel="stylesheet">
+    <link href="https://carto.com/developers/carto-vl/v1.4.4/examples/maps/style.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/FileSaver.js/2014-11-29/FileSaver.js"></script>
+    
+<style>
+        aside.toolbox {
+            max-width: 400px;
+        } 
+
+</style>   
+</head>
+    
+<body>
+    <!-- Add map container -->
+    <div id="map"></div>
+
+    <!-- Animation play pause control elements -->
+    <aside class="toolbox">
+        <div class="box">
+            <header>
+                <h1>Flight trail animation</h1>
+            </header>
+            <section>
+                <p class="description open-sans">Data: flightradar24: <a href="http://www.flightradar24.com/">flightradar24</a> Made by Ce HOU</a> using <a href="https://carto.com/developers/carto-vl/v0.10.0">Carto VL</a>.</p>
+            </section>
+            <section style="margin-top: 15px;">
+                <input type="button" id="js-play-button">
+                <input type="button" id="js-pause-button">
+                <input type="range" id="js-time-range" min="0" max="1" step="0.01" value="0.7">
+                <span id="js-current-time" class="open-sans"></span>
+            </section>
+            <hr>
+            <div>
+                <p><input type="button" id="export" value="export data"/></p>
+            </div>
+            <a href="flightradar.html" class="button">back to flight dashboard</a>
+        </div>
+    </aside>
+    
+    
+    <div id="loader">
+        <div class="CDB-LoaderIcon CDB-LoaderIcon--big">
+            <svg class="CDB-LoaderIcon-spinner" viewBox="0 0 50 50">
+                <circle class="CDB-LoaderIcon-path" cx="25" cy="25" r="20" fill="none"></circle>
+            </svg>
+        </div>
+    </div>
+    
+    <script src="js/expert_button.js"></script>
+    <script>
+        
+        // Add Mapbox basemap and set properties
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: carto.basemaps.darkmatter,
+            center: [-73.9385, 40.6643],
+            zoom: 11
+        });
+        
+        // Add navitation controls
+        const nav = new mapboxgl.NavigationControl();
+        map.addControl(nav, 'top-left');
+        map.addControl(new mapboxgl.FullscreenControl(), 'top-left');
+        
+
+        //** CARTO VL functionality begins here **//
+
+        // Define user. API Key requires access to the Geolife dataset
+        carto.setDefaultAuth({
+            username: 'cehou',
+            apiKey: '174cbdc93446a90186b3033d6d0ef055ab3180d5'
+        });
+
+        // Define source
+        const source = new carto.source.Dataset('trails_1');
+
+        // Define Viz object and custom style. @ objects are variables.
+        // Animation controlled using filter statement- filter: animation($timeColumnInDataset, durationOfAnimationSeconds, fade(fadeInSecs, fadeOutSecs))
+        // See https://carto.com/developers/carto-vl/guides/animated-visualizations/
+        
+         const viz1 = new carto.Viz(`
+            @duration: 360
+            @animation: animation($time, @duration, fade(0, 5))
+            filter: @animation
+            color: rgba(30,180,255,0.8)
+            width: ramp(zoomrange([15,18]),[7,20])
+            strokeWidth: 0
+        `);
+        
+        // Add a second viz object which will cumulatively record the trails over time. Note fade out set to 'hold', so points do not fade out, and the alpha(transparency) value set very low at 0.007
+
+        const viz2 = new carto.Viz(`
+            @duration: 360
+            @animation: animation($time, @duration, fade(0, hold))
+            filter: @animation
+            color: rgba(30,180,255,0.007)
+            width: ramp(zoomrange([6,18]),[2,10])
+            strokeWidth: 0
+        `);
+
+        const layer1 = new carto.Layer('layer1', source, viz1);
+        const layer2 = new carto.Layer('layer2', source, viz2);
+        
+
+        layer2.addTo(map);
+        layer1.addTo(map); // Want layer1 on top of layer2, so add second
+
+        // Get HTML elements
+        const $playbutton = document.getElementById('js-play-button');
+        const $pausebutton = document.getElementById('js-pause-button');
+        const $durationRange = document.getElementById('js-duration-range');
+        const $timeRange = document.getElementById('js-time-range');
+        const $spanDuration = document.getElementById('js-duration-span');
+        const $currentTime = document.getElementById('js-current-time');
+        // $currentTime.innerText = viz1.variables.animation.getProgressValue().toISOString()
+
+        // Save initial time range value
+        let last = $timeRange.value;
+        viz1.variables.animation.setProgressPct($timeRange.value);
+        viz2.variables.animation.setProgressPct($timeRange.value);
+
+        // Listen to interaction events
+
+
+        $playbutton.addEventListener('click', () => {
+            // Play the animation
+            viz1.variables.animation.play();
+            viz2.variables.animation.play();
+        });
+
+        $pausebutton.addEventListener('click', () => {
+            // Pause the animation
+            viz1.variables.animation.pause();
+            viz2.variables.animation.pause();
+        });
+
+        $timeRange.addEventListener('input', () => {
+            // Update animation progress
+            viz1.variables.animation.setProgressPct($timeRange.value);
+            viz2.variables.animation.setProgressPct($timeRange.value);
+            last = $timeRange.value;
+            $currentTime.innerText = viz1.variables.animation.getProgressValue().toISOString().substr(0,16);
+            
+            if(viz1.variables.animation.isPlaying()) { }
+            else { 
+                viz1.variables.animation.play();
+                viz2.variables.animation.play();
+                console.log("test");
+                viz1.variables.animation.pause();
+                viz2.variables.animation.pause();
+            }
+            
+        });
+
+        // Listen to layer events
+        layer1.on('updated', () => {
+            if ($timeRange.value == last) {
+                $timeRange.value = viz1.variables.animation.getProgressPct();
+                last = $timeRange.value;
+            }
+            $currentTime.innerText = viz1.variables.animation.getProgressValue().toISOString().substr(0,16);
+        });        
+        
+        // Listen to layer events
+        layer2.on('updated', () => {
+            if ($timeRange.value == last) {
+                $timeRange.value = viz2.variables.animation.getProgressPct();
+                last = $timeRange.value;
+            }
+        });
+
+        layer2.on('loaded', hideLoader);
+
+        function hideLoader() {
+            document.getElementById('loader').style.opacity = '0';
+        }
+        
+        
+    </script>
+        
+        
+
+</body>
+</html>
