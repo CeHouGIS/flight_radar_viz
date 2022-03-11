@@ -35,7 +35,7 @@ map.on('load',function(){
             source: 'airports',
             paint: {
                 'circle-radius':3,
-                'circle-color': '#fff',
+                'circle-color': '#cc0033',
                 'circle-opacity': 0.95,
                 'circle-opacity-transition': {  //Opacity transition adds a delay when changing the opacity for a smooth layer change effect
                     duration: 1000,
@@ -80,8 +80,8 @@ map.on('load',function(){
             // increase radius as zoom increases
             'heatmap-radius':{
                 stops: [
-                [4, 20],
-                [15, 5]
+                [1, 5],
+                [15, 150]
                 ]
             },
             // decrease opacity to transition into the circle layer
@@ -97,6 +97,6 @@ map.on('load',function(){
         );
     });
     
-    console.log(my_geojson);
+    // console.log(my_geojson);
 
 })

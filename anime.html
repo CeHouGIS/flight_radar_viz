@@ -56,15 +56,15 @@
         </div>
     </div>
     
-    <script src="js/expert_button.js"></script>
+    <script src="./js/expert_button.js"></script>
     <script>
         
         // Add Mapbox basemap and set properties
         const map = new mapboxgl.Map({
             container: 'map',
-            style: carto.basemaps.darkmatter,
+            style: carto.basemaps.positron,
             center: [-73.9385, 40.6643],
-            zoom: 11
+            zoom: 1
         });
         
         // Add navitation controls
@@ -89,7 +89,7 @@
         // See https://carto.com/developers/carto-vl/guides/animated-visualizations/
         
          const viz1 = new carto.Viz(`
-            @duration: 360
+            @duration: 60
             @animation: animation($time, @duration, fade(0, 5))
             filter: @animation
             color: rgba(30,180,255,0.8)

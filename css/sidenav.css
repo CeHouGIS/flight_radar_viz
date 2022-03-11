@@ -14,28 +14,27 @@ body {
     z-index: 0;
     top: 0;
     left: 0;
-    background-color: #111;
+    background-color: #BFD5DF;
     overflow-x: hidden;
     transition: 0.5s; /*delayed show for 5s */
     padding-top: 60px;
 }
  
-/*侧边栏标签选择器*/
+/*choose bar*/
 .sidenav a {
     padding: 8px 8px 8px 32px;
     text-decoration: none;
     font-size: 25px;
-    color: #818181;
+    color: #83ABBB;
     display: block;
     transition: 0.3s; /*标签延迟0.3s显示*/
 }
  
-/*侧栏标签和关闭按钮光标的效果*/
+/*close button*/
 .sidenav a:hover, .offcanvas a:focus{
-    color: #f1f1f1;
+    color: #000000;
 }
  
-/*侧栏和关闭按钮的位置选择器*/
 .sidenav .closebtn {
     position: absolute;
     top: 0;
@@ -44,13 +43,11 @@ body {
     margin-left: 50px;
 }
  
-/*主体内容*/
 #main {
-    transition: margin-left .5s;/*主体内容延迟0.5s整体y右移动*/
+    transition: margin-left .5s;
     padding: 16px;
 }
  
-/*当文档高度小于450px时，改变侧栏的padding属性和字体大小*/
 @media screen and (max-height: 450px) {
   .sidenav {padding-top: 15px;}
   .sidenav a {font-size: 18px;}

@@ -52,8 +52,11 @@ d3.json("/data/flights_detail.json", function(data) {
 
     myChart.draw(500); // Draw the chart. The number is the animation delay in miliseconds
 
-    svg.selectAll("path.domain").style("stroke", "#111"); // These statements change the chart gridlines to a lighter grey colour
-    svg.selectAll("g.tick line").style("stroke", "#111");
-    d3.selectAll(".dimple-axis-x .dimple-custom-axis-label").style("fill","#111");
+    svg.selectAll("path.domain").style("stroke", "black"); // These statements change the chart gridlines to a lighter grey colour
+    svg.selectAll("g.tick line").style("stroke", "black");
+    // legend.style("fill", '#fff')
+    // svg.selectAll(".x.axis .tick text").style("stroke", "white")
+    // d3.selectAll(".dimple-axis-x .dimple-custom-axis-label").style("fill","#e0dede");
+    // d3.selectAll(".dimple-axis-y .dimple-custom-axis-label").style("fill","#e0dede");
 
 });
